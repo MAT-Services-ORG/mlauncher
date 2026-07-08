@@ -196,7 +196,7 @@ Aqua Launcher relies completely onto `launcher-service.js` logic handlers which 
 
 ## License
 
-Distributed locally identifying as standard MIT architectures.
+Distributed under the MIT License. See `LICENSE` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
