@@ -1,20 +1,20 @@
 /**
  * CurseForge API Proxy - Cloudflare Worker
  * 
- * KURULUM TALİMATLARI (Cloudflare Dashboard üzerinden):
- * 1. Cloudflare hesabınıza giriş yapın ve "Workers & Pages" sekmesine gidin.
- * 2. "Create application" -> "Create Worker" butonuna tıklayın.
- * 3. Worker'a bir isim verin (örn: aqua-cf-proxy) ve "Deploy"a tıklayın.
- * 4. Başarıyla oluştuktan sonra "Edit code" butonuna basın.
- * 5. Bu dosyadaki tüm kodları kopyalayıp oradaki editöre yapıştırın.
- * 6. "Save and deploy" butonuna basarak kodu kaydedin.
- * 7. Worker'ınızın ayarlarına gidin (Settings -> Variables).
- * 8. "Environment Variables" altında "Add variable" tıklayın.
- * 9. Variable name (Değişken adı) olarak: CF_API_KEY girin.
- * 10. Value (Değer) kısmına CurseForge'dan aldığınız API anahtarınızı yapıştırın. 
- * 11. "Deploy" veya "Save" diyerek değişkenleri kaydedin.
- * 12. Worker'ınıza atanan URL'yi (örn: https://aqua-cf-proxy.yaman.workers.dev) kopyalayın.
- * 13. Aqua Launcher ayarlarındaki "CurseForge API Proxy URL" alanına bu URL'yi yapıştırın!
+ * SETUP INSTRUCTIONS (via Cloudflare Dashboard):
+ * 1. Log in to your Cloudflare account and go to the "Workers & Pages" tab.
+ * 2. Click on the "Create application" -> "Create Worker" button.
+ * 3. Give your Worker a name (e.g., aqua-cf-proxy) and click "Deploy".
+ * 4. Once successfully created, click the "Edit code" button.
+ * 5. Copy all the code from this file and paste it into the editor there.
+ * 6. Save the code by clicking the "Save and deploy" button.
+ * 7. Go to your Worker's settings (Settings -> Variables).
+ * 8. Click "Add variable" under "Environment Variables".
+ * 9. Enter CF_API_KEY as the Variable name.
+ * 10. Paste your API key obtained from CurseForge into the Value section. 
+ * 11. Save the variables by clicking "Deploy" or "Save".
+ * 12. Copy the URL assigned to your Worker (e.g., https://aqua-cf-proxy.yaman.workers.dev).
+ * 13. Paste this URL into the "CurseForge API Proxy URL" field in the Aqua Launcher settings!
  */
 
 export default {
