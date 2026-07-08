@@ -227,3 +227,8 @@ Project Link: [https://github.com/yamanist0/minecraft-aqua-launcher](https://git
 [Tailwind-url]: https://tailwindcss.com/
 [Node-badge]: https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white
 [Node-url]: https://nodejs.org/ 
+
+<p align="center">
+  <small>Made with 🤍 by <a href="https://github.com/yamanist0">yamanist</a></small>
+</p>
+
