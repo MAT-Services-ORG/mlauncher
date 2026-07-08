@@ -6,11 +6,13 @@ const { Auth } = require('msmc');
 const {
   getVanillaVersions,
   getFabricLoaders,
+  getForgeLoaders,
   getForgeVersion,
   buildLaunchOptions,
   formatVersionLabel,
 } = require('./loaders');
 const { getJavaInfo: fetchJavaInfo } = require('./java-detector');
+const { downloadJava } = require('./java-downloader');
 
 class LauncherService {
   constructor(sendEvent) {
@@ -116,8 +118,9 @@ class LauncherService {
     }
     if (loader === 'forge') {
       try {
-        return [await getForgeVersion(mcVersion)];
-      } catch {
+        return await getForgeLoaders(mcVersion);
+      } catch (e) {
+        console.error('Failed to fetch forge loaders', e);
         return [];
       }
     }
@@ -180,13 +183,8 @@ class LauncherService {
     try {
       const javaInfo = await fetchJavaInfo(mcVersion);
       if (!javaInfo.selected) {
-        const installedText = javaInfo.installed.length
-          ? javaInfo.installed.map((item) => `Java ${item.version}`).join(', ')
-          : 'none detected';
-
-        throw new Error(
-          `Minecraft ${mcVersion} requires Java ${javaInfo.required}+. Found: ${installedText}. Install Java ${javaInfo.required} or newer from https://adoptium.net/`,
-        );
+        const downloadedPath = await downloadJava(javaInfo.required, this.mcRoot, this.sendEvent.bind(this));
+        javaInfo.selected = { version: javaInfo.required, path: downloadedPath };
       }
 
       this.sendEvent('launch-status', {

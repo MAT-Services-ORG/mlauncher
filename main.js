@@ -5,11 +5,15 @@ const path = require('path');
 const { LauncherService } = require('./services/launcher-service');
 const { ModpackService } = require('./services/modpack-service');
 const { ServerListService } = require('./services/server-list');
+const platforms = require('./services/modpack-platforms');
 
 let mainWindow;
 let launcherService;
 let modpackService;
 let serverListService;
+
+app.commandLine.appendSwitch('ignore-certificate-errors');
+app.commandLine.appendSwitch('log-level', '3'); // Suppress noise
 
 function sendToRenderer(channel, data) {
   mainWindow?.webContents.send(channel, data);
@@ -34,16 +38,19 @@ function createWindow() {
 
   mainWindow.loadFile('launcher.html');
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-  });
-
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
 
 function registerIpcHandlers() {
+  ipcMain.handle('launcher:show-window', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
   ipcMain.handle('launcher:get-account', () => launcherService.getAccountInfo());
 
   ipcMain.handle('launcher:login-microsoft', () =>
@@ -110,9 +117,43 @@ function registerIpcHandlers() {
   ipcMain.handle('launcher:get-installed-modpacks', () => {
     return Object.assign({}, modpackService.manifest);
   });
+
+  // ─── Modrinth IPC ──────────────────────────────────────────────
+  ipcMain.handle('launcher:search-modrinth', async (_, query, facets, offset, limit) => {
+    return platforms.searchModrinth(query, facets, offset, limit);
+  });
+
+  ipcMain.handle('launcher:get-modrinth-project', async (_, idOrSlug) => {
+    return platforms.getModrinthProject(idOrSlug);
+  });
+
+  ipcMain.handle('launcher:get-modrinth-versions', async (_, projectId, loaders, gameVersions) => {
+    return platforms.getModrinthVersions(projectId, loaders, gameVersions);
+  });
+
+  ipcMain.handle('launcher:install-mrpack', async (_, packId, versionData, meta) => {
+    return modpackService.installMrpackPack(packId, versionData, meta);
+  });
+
+  // ─── CurseForge IPC ────────────────────────────────────────────
+  ipcMain.handle('launcher:search-curseforge', async (_, query, proxyBaseUrl, index, pageSize) => {
+    return platforms.searchCurseForge(query, proxyBaseUrl, index, pageSize);
+  });
+
+  ipcMain.handle('launcher:get-curseforge-project', async (_, modId, proxyBaseUrl) => {
+    return platforms.getCurseForgeProject(modId, proxyBaseUrl);
+  });
+
+  ipcMain.handle('launcher:get-curseforge-files', async (_, modId, proxyBaseUrl) => {
+    return platforms.getCurseForgeFiles(modId, proxyBaseUrl);
+  });
+
+  ipcMain.handle('launcher:install-curseforge-pack', async (_, packId, fileData, proxyBaseUrl, meta) => {
+    return modpackService.installCfPack(packId, fileData, proxyBaseUrl, meta);
+  });
   
-  ipcMain.handle('launcher:get-servers-page', async (_, page, serverListUrl) => {
-    return serverListService.getServersPage(page, serverListUrl);
+  ipcMain.handle('launcher:get-servers-page', async (_, page, serverListUrl, query) => {
+    return serverListService.getServersPage(page, serverListUrl, query);
   });
   
   ipcMain.handle('launcher:get-all-servers', async (_, serverListUrl) => {

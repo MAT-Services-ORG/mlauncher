@@ -146,6 +146,21 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        #status-panel {
+            opacity: 0;
+            transform: translateY(12px) scale(0.98);
+            pointer-events: none;
+            transition: opacity 220ms ease, transform 220ms ease, visibility 220ms ease;
+            visibility: hidden;
+        }
+
+        #status-panel.is-visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+            visibility: visible;
+        }
+
         .input-well {
             background: rgba(75, 142, 255, 0.18);
             border: 1px solid rgba(173, 198, 255, 0.35);
@@ -286,11 +301,67 @@
         .modal-backdrop {
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(8px);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .modal-backdrop.open {
+            opacity: 1;
+        }
+        .modal-backdrop > div {
+            transform: scale(0.95) translateY(10px);
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-backdrop.open > div {
+            transform: scale(1) translateY(0);
+            opacity: 1;
         }
 
         #status-panel[data-state="busy"] { border-left-color: #74d1ff; }
         #status-panel[data-state="running"] { border-left-color: #4caf50; }
         #status-panel[data-state="error"] { border-left-color: #ffb4ab; }
+
+        /* Static page-level UI element reveal animation */
+        .page-ui {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+        .page-ui.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .nav-btn {
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0;
+            width: 0%;
+            background: rgba(255, 255, 255, 0.08);
+            border-left: 2px solid #adc6ff;
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: -1;
+        }
+        .nav-btn.active {
+            color: #adc6ff !important;
+            font-weight: 700;
+        }
+        .nav-btn.active::before {
+            width: 100%;
+        }
+        .nav-btn:not(.active):hover {
+            color: #e4e2e4;
+        }
+        .nav-btn:not(.active):hover::before {
+            width: 100%;
+            border-left-width: 0px;
+            background: rgba(255, 255, 255, 0.03);
+        }
     </style>
 </head>
 <body class="h-screen w-screen relative font-body-md text-body-md overflow-hidden bg-background">
@@ -314,20 +385,20 @@
 </div>
 </div>
 <!-- Navigation Links -->
-<div class="flex flex-col gap-2 flex-grow titlebar-no-drag">
-<a id="nav-home" class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold border-l-2 border-primary bg-white/5 backdrop-blur-md transition-all duration-300 cursor-pointer titlebar-no-drag">
+<div class="flex flex-col gap-2 flex-grow titlebar-no-drag pb-6">
+<a id="nav-home" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant transition-colors duration-300 cursor-pointer titlebar-no-drag">
 <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">home</span>
 <span>Home</span>
 </a>
-<a id="nav-modpacks" class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 hover:backdrop-blur-md transition-all duration-300 cursor-pointer titlebar-no-drag">
+<a id="nav-modpacks" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant transition-colors duration-300 cursor-pointer titlebar-no-drag">
 <span class="material-symbols-outlined text-[20px]">package_2</span>
 <span>Modpacks</span>
 </a>
-<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 hover:backdrop-blur-md transition-all duration-300 cursor-pointer titlebar-no-drag">
+<a id="nav-multiplayer" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant transition-colors duration-300 cursor-pointer titlebar-no-drag">
 <span class="material-symbols-outlined text-[20px]">public</span>
 <span>Multiplayer</span>
 </a>
-<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 hover:backdrop-blur-md transition-all duration-300 cursor-pointer">
+<a id="nav-settings" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant transition-colors duration-300 cursor-pointer titlebar-no-drag">
 <span class="material-symbols-outlined text-[20px]">settings</span>
 <span>Settings</span>
 </a>
@@ -459,7 +530,7 @@
       <div id="home-modpack-loading" class="absolute inset-0 z-20 flex items-center justify-center bg-surface/80 backdrop-blur rounded-3xl">
         <span class="material-symbols-outlined animate-spin text-primary text-[28px]">sync</span>
       </div>
-      <div id="home-modpack-scroller" class="hidden flex gap-3 overflow-x-auto pb-2 scroll-smooth hide-scrollbar pl-14 pr-14 py-2">
+      <div id="home-modpack-scroller" class="hidden flex gap-3 overflow-hidden pb-2 scroll-smooth hide-scrollbar pl-14 pr-14 py-2 rounded-[28px]">
         <!-- Home modpack cards -->
       </div>
       <button id="home-modpack-next" class="absolute right-0 top-0 bottom-0 z-10 w-10 rounded-full glass-card hidden flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-95">
@@ -482,7 +553,7 @@
       <div id="home-server-loading" class="absolute inset-0 z-20 flex items-center justify-center bg-surface/80 backdrop-blur rounded-3xl">
         <span class="material-symbols-outlined animate-spin text-primary text-[28px]">sync</span>
       </div>
-      <div id="home-server-scroller" class="hidden flex gap-3 overflow-x-auto pb-2 scroll-smooth hide-scrollbar pl-14 pr-14 py-2">
+      <div id="home-server-scroller" class="hidden flex gap-3 overflow-hidden pb-2 scroll-smooth hide-scrollbar pl-14 pr-14 py-2 rounded-[28px]">
         <!-- Home server cards -->
       </div>
       <button id="home-server-next" class="absolute right-0 top-0 bottom-0 z-10 w-10 rounded-full glass-card hidden flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-95">
@@ -513,10 +584,33 @@
 </div>
 <!-- Modpacks View -->
 <div id="view-modpacks" class="page-pane hidden absolute inset-0 pt-20 px-8 pb-8 overflow-y-auto z-0 titlebar-no-drag">
-  <div class="flex items-center justify-between mb-6">
-    <h2 class="font-headline-md text-3xl font-bold text-on-surface">Modpacks</h2>
-    <div id="modpacks-loading" class="hidden text-primary">
-      <span class="material-symbols-outlined animate-spin text-[24px]">sync</span>
+  <div class="flex flex-col gap-4 mb-6">
+    <div class="flex items-center justify-between page-ui">
+      <h2 class="font-headline-md text-3xl font-bold text-on-surface">Modpacks</h2>
+      <div id="modpacks-loading" class="hidden text-primary">
+        <span class="material-symbols-outlined animate-spin text-[24px]">sync</span>
+      </div>
+    </div>
+    <div class="flex items-center justify-between border-b border-white/10 pb-2 flex-wrap gap-2 page-ui">
+      <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+        <button id="tab-mp-installed" data-mp-tab="installed" class="px-4 py-2 font-bold text-primary border-b-2 border-primary transition-colors whitespace-nowrap">Installed</button>
+        <button id="tab-mp-catalog" data-mp-tab="catalog" class="px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap">Catalog</button>
+        <button id="tab-mp-modrinth" data-mp-tab="modrinth" class="px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap">Modrinth</button>
+        <button id="tab-mp-curseforge" data-mp-tab="curseforge" class="px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap">CurseForge</button>
+      </div>
+      <div id="mp-platform-pagination" class="hidden flex items-center gap-2">
+        <button id="btn-mp-plat-prev" class="p-1 px-3 bg-white/5 rounded-lg text-on-surface hover:bg-white/10 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          Prev
+        </button>
+        <span id="mp-plat-page-text" class="font-label-sm text-sm font-bold text-on-surface-variant w-20 text-center">Page 1</span>
+        <button id="btn-mp-plat-next" class="p-1 px-3 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          Next
+        </button>
+      </div>
+    </div>
+    <div id="modpack-search-container" class="hidden relative mt-2 page-ui">
+      <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+      <input id="modpack-search-input" type="text" placeholder="Search for modpacks..." class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-on-surface focus:outline-none focus:border-primary transition-colors" />
     </div>
   </div>
   <div id="modpacks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-24 pb-12">
@@ -526,7 +620,7 @@
 
 <!-- Settings View -->
 <div id="view-settings" class="page-pane hidden absolute inset-0 pt-20 px-8 pb-8 overflow-y-auto z-20 titlebar-no-drag">
-  <div class="max-w-3xl mx-auto glass-card rounded-2xl p-8 mt-4">
+  <div class="max-w-3xl mx-auto glass-card rounded-2xl p-8 mt-4 page-ui">
     <h2 class="font-headline-md text-3xl font-bold text-on-surface mb-6">Settings</h2>
     
     <div class="flex flex-col gap-6">
@@ -558,6 +652,13 @@
          <input id="setting-server-list-url" type="text" placeholder="https://example.com/servers.json" class="w-full input-well rounded-xl px-4 py-3 outline-none font-label-sm"/>
        </div>
 
+       <!-- CurseForge Proxy URL -->
+       <div>
+         <label class="block font-bold text-on-surface mb-2">CurseForge API Proxy URL</label>
+         <p class="text-sm text-on-surface-variant mb-2">Enter the Cloudflare Worker URL for proxying CurseForge requests.</p>
+         <input id="setting-curseforge-proxy" type="text" placeholder="https://my-proxy.workers.dev" class="w-full input-well rounded-xl px-4 py-3 outline-none font-label-sm"/>
+       </div>
+
        <!-- Save Button -->
        <div class="flex justify-end mt-4">
           <button id="btn-save-settings" class="px-6 py-3 rounded-xl bg-gradient-to-b from-primary-container to-inverse-primary text-white font-bold hover:shadow-[0_0_15px_rgba(75,142,255,0.4)] transition-all">
@@ -571,13 +672,19 @@
 <!-- Multiplayer View -->
 <div id="view-multiplayer" class="page-pane hidden absolute inset-0 pt-20 px-8 pb-8 overflow-y-auto z-0 titlebar-no-drag">
   <div class="flex flex-col gap-4 mb-6">
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 page-ui">
       <h2 class="font-headline-md text-3xl font-bold text-on-surface">Top Servers</h2>
-      <div id="multiplayer-loading" class="hidden text-primary">
-        <span class="material-symbols-outlined animate-spin text-[24px]">sync</span>
+      <div class="flex items-center gap-4 w-full md:w-auto">
+        <div class="relative w-full md:w-64">
+           <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+           <input id="server-search-input" type="text" placeholder="Search servers by name or desc..." class="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-on-surface focus:outline-none focus:border-primary transition-colors text-sm" />
+        </div>
+        <div id="multiplayer-loading" class="hidden text-primary">
+          <span class="material-symbols-outlined animate-spin text-[24px]">sync</span>
+        </div>
       </div>
     </div>
-    <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-3 page-ui">
       <div class="flex items-center gap-2">
         <button id="btn-mp-prev-top" class="px-4 py-2 rounded-lg bg-surface-variant hover:bg-white/10 text-on-surface flex gap-2 items-center opacity-50 cursor-not-allowed">
            <span class="material-symbols-outlined">arrow_back</span>
@@ -662,9 +769,9 @@ Microsoft Account
 <button data-close-modal="version-modal" class="window-btn"><span class="material-symbols-outlined">close</span></button>
 </div>
 <div class="flex gap-2 mb-4">
-<button data-loader-tab="vanilla" class="flex-1 py-2 rounded-lg border border-white/10 text-on-surface-variant transition-all">Vanilla</button>
-<button data-loader-tab="fabric" class="flex-1 py-2 rounded-lg border border-primary text-primary bg-white/5 transition-all">Fabric</button>
-<button data-loader-tab="forge" class="flex-1 py-2 rounded-lg border border-white/10 text-on-surface-variant transition-all">Forge</button>
+<button data-loader-tab="vanilla" class="flex-1 py-2 rounded-lg border text-on-surface-variant border-transparent transition-all duration-300">Vanilla</button>
+<button data-loader-tab="fabric" class="flex-1 py-2 rounded-lg border text-on-surface-variant border-transparent transition-all duration-300">Fabric</button>
+<button data-loader-tab="forge" class="flex-1 py-2 rounded-lg border text-on-surface-variant border-transparent transition-all duration-300">Forge</button>
 </div>
 <label class="font-label-sm text-label-sm text-on-surface-variant block mb-2">Minecraft Version</label>
 <select id="mc-version-select" class="w-full input-well rounded-xl px-4 py-3 mb-4 text-on-surface outline-none cursor-pointer"></select>
@@ -673,6 +780,22 @@ Microsoft Account
 <select id="loader-version-select" class="w-full input-well rounded-xl px-4 py-3 mb-4 text-on-surface outline-none cursor-pointer"></select>
 </div>
 <button id="btn-save-version" class="w-full py-3 rounded-xl bg-gradient-to-b from-primary-container to-inverse-primary text-white font-bold">Confirm</button>
+</div>
+</div>
+
+<!-- Modpack Version Modal -->
+<div id="mp-version-modal" class="hidden fixed inset-0 z-50 modal-backdrop items-center justify-center titlebar-no-drag">
+<div class="glass-card rounded-2xl p-6 w-full max-w-lg mx-4 border border-white/10 shadow-2xl">
+<div class="flex items-center justify-between mb-6">
+<h2 id="mp-version-title" class="font-headline-md text-xl font-bold text-on-surface truncate pr-4">Install Modpack</h2>
+<button data-close-modal="mp-version-modal" class="window-btn"><span class="material-symbols-outlined">close</span></button>
+</div>
+<label id="mp-version-label" class="font-label-sm text-label-sm text-on-surface-variant block mb-2">Select Version</label>
+<select id="mp-version-select" class="w-full input-well rounded-xl px-4 py-3 mb-6 text-on-surface outline-none cursor-pointer"></select>
+<button id="btn-install-modpack" class="w-full py-3 rounded-xl bg-gradient-to-b from-primary-container to-inverse-primary text-white font-bold">Install</button>
+<div id="mp-version-loading" class="hidden flex items-center justify-center gap-2 mt-4 text-on-surface-variant text-sm">
+  <span class="material-symbols-outlined animate-spin">sync</span> Loading versions...
+</div>
 </div>
 </div>
 

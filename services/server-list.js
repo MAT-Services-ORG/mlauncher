@@ -2,7 +2,7 @@ const net = require('net');
 const dns = require('dns').promises;
 
 const DEFAULT_SERVERS_URL =
-  'https://raw.githubusercontent.com/Yaman-the-coder/aqua-launcher/refs/heads/main/servers.json';
+  'https://raw.githubusercontent.com/yamanist0/aqua-launcher/refs/heads/main/servers.json';
 const PAGE_SIZE = 30;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const PING_TIMEOUT_MS = 2000;
@@ -236,8 +236,15 @@ class ServerListService {
     Promise.all(Array.from({ length: workers }, () => worker())).catch(() => {});
   }
 
-  async getServersPage(page = 1, serverListUrl) {
-    const allServers = await this.loadServers(serverListUrl);
+  async getServersPage(page = 1, serverListUrl, query = '') {
+    let allServers = await this.loadServers(serverListUrl);
+    if (query) {
+      const lowerQuery = query.toLowerCase();
+      allServers = allServers.filter(s =>
+        (s.name && s.name.toLowerCase().includes(lowerQuery)) ||
+        (s.description && s.description.toLowerCase().includes(lowerQuery))
+      );
+    }
     const totalServers = allServers.length;
     const totalPages = Math.max(1, Math.ceil(totalServers / PAGE_SIZE));
     const safePage = Math.min(Math.max(1, page), totalPages);

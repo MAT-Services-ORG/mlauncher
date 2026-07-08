@@ -7,6 +7,12 @@ async function fetchJson(url) {
   return res.json();
 }
 
+async function fetchText(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+  return res.text();
+}
+
 async function downloadFile(url, dest) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Download failed: ${url}`);
@@ -30,8 +36,9 @@ async function getFabricLoaders(mcVersion) {
     `https://meta.fabricmc.net/v2/versions/loader/${mcVersion}`,
   );
   return loaders
-    .filter((entry) => entry.loader.stable)
-    .map((entry) => entry.loader.version);
+    .map((entry) => entry.loader.version)
+    .filter(Boolean)
+    .sort((a, b) => compareNumericSegments(b, a));
 }
 
 async function getLatestFabricLoader(mcVersion) {
@@ -54,6 +61,46 @@ async function installFabricProfile(root, mcVersion, loaderVersion) {
     JSON.stringify(profile, null, 2),
   );
   return { versionId, loaderVersion };
+}
+
+async function parseVersionList(xml) {
+  const matches = [...xml.matchAll(/<version>([^<]+)<\/version>/g)];
+  return matches.map((match) => match[1]);
+}
+
+function compareNumericSegments(a, b) {
+  const aParts = a.split('.').map((part) => Number(part) || 0);
+  const bParts = b.split('.').map((part) => Number(part) || 0);
+  const length = Math.max(aParts.length, bParts.length);
+
+  for (let i = 0; i < length; i += 1) {
+    const aValue = aParts[i] || 0;
+    const bValue = bParts[i] || 0;
+    if (aValue !== bValue) return aValue - bValue;
+  }
+  return 0;
+}
+
+async function getForgeLoaders(mcVersion) {
+  const xml = await fetchText(
+    'https://files.minecraftforge.net/maven/net/minecraftforge/forge/maven-metadata.xml',
+  );
+
+  if (!xml.includes('<version>')) {
+    throw new Error('Unexpected Forge metadata format.');
+  }
+
+  const versions = await parseVersionList(xml);
+  const prefix = `${mcVersion}-`;
+  const loaderVersions = versions
+    .filter((version) => version.startsWith(prefix))
+    .map((version) => version.slice(prefix.length));
+
+  if (!loaderVersions.length) {
+    throw new Error(`Forge is not available for Minecraft ${mcVersion}`);
+  }
+
+  return loaderVersions.sort((a, b) => compareNumericSegments(b, a));
 }
 
 async function getForgeVersion(mcVersion) {
@@ -160,6 +207,7 @@ module.exports = {
   getVanillaVersions,
   getFabricLoaders,
   getLatestFabricLoader,
+  getForgeLoaders,
   getForgeVersion,
   installFabricProfile,
   buildLaunchOptions,

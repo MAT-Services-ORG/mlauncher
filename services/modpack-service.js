@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
 const { resolveModrinthLink } = require('./modrinth_downloader');
+const platforms = require('./modpack-platforms');
 
 class ModpackService {
   constructor(sendEvent) {
@@ -259,6 +260,85 @@ class ModpackService {
 
   async reinstallModpack(packId, modpackData) {
     return this.installModpack(packId, modpackData, true);
+  }
+
+  // ─── Modrinth .mrpack Install ────────────────────────────────────
+  async installMrpackPack(packId, versionData, meta) {
+    if (this.isDownloading) throw new Error('A download is already in progress');
+    this.isDownloading = true;
+
+    try {
+      const result = await platforms.installMrpack(versionData, this.normalizePackId(packId), this.mcRoot, this.sendEvent.bind(this));
+
+      let mcVersion = '1.20.4';
+      let modLoaders = [];
+      if (result.dependencies) {
+          if (result.dependencies.minecraft) mcVersion = result.dependencies.minecraft;
+          if (result.dependencies['fabric-loader']) modLoaders.push('fabric-' + result.dependencies['fabric-loader']);
+          if (result.dependencies.forge) modLoaders.push('forge-' + result.dependencies.forge);
+          if (result.dependencies['quilt-loader']) modLoaders.push('quilt-' + result.dependencies['quilt-loader']);
+      }
+
+      this.manifest[packId] = {
+        version: versionData.version_number || versionData.id || 'unknown',
+        folder: this.normalizePackId(packId),
+        type: 'modrinth',
+        name: meta?.name || result.name,
+        description: meta?.description || '',
+        iconUrl: meta?.iconUrl || '',
+        mcVersion: mcVersion,
+        modLoaders: modLoaders,
+        dependencies: result.dependencies,
+        fileCount: result.fileCount,
+      };
+      this.saveManifest();
+
+      this.syncPackModsToGame(packId);
+      this.sendEvent('modpack-status', { state: 'done', message: `Modrinth modpack "${result.name}" installed successfully.` });
+      return result;
+    } catch (err) {
+      this.sendEvent('modpack-status', { state: 'error', message: err.message });
+      throw err;
+    } finally {
+      this.isDownloading = false;
+    }
+  }
+
+  // ─── CurseForge .zip Install ─────────────────────────────────────
+  async installCfPack(packId, fileData, proxyBaseUrl, meta) {
+    if (this.isDownloading) throw new Error('A download is already in progress');
+    this.isDownloading = true;
+
+    try {
+      const result = await platforms.installCurseForgePack(fileData, this.normalizePackId(packId), this.mcRoot, proxyBaseUrl, this.sendEvent.bind(this));
+
+      this.manifest[packId] = {
+        version: String(fileData.id || 'unknown'),
+        folder: this.normalizePackId(packId),
+        type: 'curseforge',
+        name: meta?.name || result.name,
+        description: meta?.description || '',
+        iconUrl: meta?.iconUrl || '',
+        mcVersion: result.mcVersion,
+        modLoaders: result.modLoaders,
+        fileCount: result.fileCount,
+      };
+      this.saveManifest();
+
+      this.syncPackModsToGame(packId);
+
+      let doneMsg = `CurseForge modpack "${result.name}" installed successfully.`;
+      if (result.distributionDenied && result.distributionDenied.length > 0) {
+        doneMsg += ` Warning: ${result.distributionDenied.length} mod(s) denied third-party download.`;
+      }
+      this.sendEvent('modpack-status', { state: 'done', message: doneMsg });
+      return result;
+    } catch (err) {
+      this.sendEvent('modpack-status', { state: 'error', message: err.message });
+      throw err;
+    } finally {
+      this.isDownloading = false;
+    }
   }
 }
 

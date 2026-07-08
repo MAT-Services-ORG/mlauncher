@@ -1,6 +1,6 @@
 {
   "name": "aqua-launcher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Aqua Launcher - Minecraft launcher",
   "main": "main.js",
   "scripts": {
@@ -16,6 +16,7 @@
     "electron-builder": "^26.0.0"
   },
   "dependencies": {
+    "adm-zip": "^0.5.18",
     "minecraft-launcher-core": "^3.18.2",
     "msmc": "^5.0.5"
   },
@@ -31,7 +32,9 @@
       "!build.bat"
     ],
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "icon": "assets/icon.ico"
     },
     "nsis": {
