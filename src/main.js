@@ -1,11 +1,11 @@
-const fs = require('fs');
+/*const fs = require('fs');
 const https = require('https');
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { LauncherService } = require('./services/launcher-service');
 const { ModpackService } = require('./services/modpack-service');
 const { ServerListService } = require('./services/server-list');
-const platforms = require('./services/modpack-platforms');
+const platforms = require('./services/modpack-platforms');*/
 
 let mainWindow;
 let launcherService;
